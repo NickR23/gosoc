@@ -5,7 +5,9 @@ import (
 	"net/http"
 )
 
-func do_handshake(client *http.Client) (*http.Client, error) {
+// Returns an initial handshake for the websocket session
+// TODO some of these keys are configurable. Let's not hardcode
+func build_handshake() (*http.Request, error) {
 	req, err := http.NewRequest("GET", "http://127.0.0.1:9001/chat", nil)
 	req.Header.Add("Host", "my.websocket.com")
 	req.Header.Add("Upgrade", "websocket")
@@ -18,12 +20,16 @@ func do_handshake(client *http.Client) (*http.Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	return req, nil
+
+}
+
+func do_handshake(client *http.Client, req *http.Request) (*http.Client, error) {
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Println("Error fetching url:", err)
 		return nil, err
 	}
-	log.Println("Initialized client...")
 	log.Println("Response:", resp.Status)
 	return client, err
 
@@ -43,5 +49,10 @@ func main() {
 	log.Println("Running client...")
 	client := &http.Client{}
 	initialize(client)
-	do_handshake(client)
+	handshake_req, _ := build_handshake()
+	resp, err := client.Do(handshake_req)
+	if err != nil {
+		log.Println("Error fetching url:", err)
+	}
+	log.Println("Response:", resp.Status)
 }
