@@ -20,3 +20,4 @@ docker run -it --rm \
     crossbario/autobahn-testsuite
 ```
 
+Some unit tests use the fuzzing server. Once the server has been started, test with `go test -v ./client`
