@@ -42,17 +42,6 @@ func build_handshake() (*http.Request, error) {
 
 }
 
-func do_handshake(client *http.Client, req *http.Request) (*http.Client, error) {
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Println("Error fetching url:", err)
-		return nil, err
-	}
-	log.Println("Response:", resp.Status)
-	return client, err
-
-}
-
 // Initialize an http client for websockets.
 // Starts the websocket handshake.
 func initialize(client *http.Client) *http.Client {
@@ -70,7 +59,8 @@ func main() {
 	handshake_req, _ := build_handshake()
 	resp, err := client.Do(handshake_req)
 	if err != nil {
-		log.Println("Error fetching url:", err)
+		log.Fatal("Error fetching url:", err)
 	}
 	log.Println("Response:", resp.Status)
+	log.Println("Response:", resp.Header)
 }
