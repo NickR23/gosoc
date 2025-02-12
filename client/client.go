@@ -1,17 +1,100 @@
 package client
 
 import (
+	"encoding/binary"
+	"fmt"
 	"log"
+	"math/rand"
+	"net"
 	"net/http"
+	"net/url"
 )
 
+type WSFrame struct {
+	Fin        bool
+	Opcode     byte
+	Mask       bool
+	PayloadLen uint64 // This should be compressed when serialized.
+	MaskingKey []byte
+	Payload    []byte
+}
+
+func applyMask(payload []byte, maskKey []byte) []byte {
+	maskedPayload := make([]byte, len(payload))
+	for i := range payload {
+		maskedPayload[i] = payload[i] ^ maskKey[i%4]
+	}
+	return maskedPayload
+}
+
+func generateMaskingKey() []byte {
+	maskKey := make([]byte, 4)
+	for i := range maskKey {
+		maskKey[i] = byte(rand.Intn(256))
+	}
+	return maskKey
+}
+
+func (f *WSFrame) Encode() ([]byte, error) {
+	firstByte := byte(0)
+	if f.Fin {
+		firstByte |= 0x80 // This sets the Fin bit.
+	}
+	firstByte |= f.Opcode // Lower bits are the opcode i think...
+
+	payloadLenBytes, secondByte := encodePayloadLength(f.PayloadLen)
+	if f.Mask {
+		secondByte |= 0x80 // Mask bit is the higher bit here
+	}
+
+	var maskKey []byte
+	payload := f.Payload
+
+	if f.Mask {
+		maskKey = generateMaskingKey()
+		payload = applyMask(payload, maskKey)
+	}
+
+	frame := []byte{firstByte, secondByte}
+	frame = append(frame, payloadLenBytes...)
+	if f.Mask {
+		frame = append(frame, maskKey...)
+	}
+	frame = append(frame, payload...)
+	return frame, nil
+
+}
+
+func encodePayloadLength(payloadLen uint64) ([]byte, byte) {
+	var lengthBytes []byte
+	secondByte := byte(0)
+
+	switch {
+	case payloadLen <= 125:
+		secondByte |= byte(payloadLen)
+	case payloadLen <= 65535:
+		secondByte |= 126
+		lengthBytes = make([]byte, 2)
+		binary.BigEndian.PutUint16(lengthBytes, uint16(payloadLen))
+	default:
+		secondByte |= 127
+		lengthBytes = make([]byte, 8)
+		binary.BigEndian.PutUint64(lengthBytes, payloadLen)
+	}
+	return lengthBytes, secondByte
+}
+
 // Returns an initial handshake for the websocket session
-// TODO some of these keys are configurable. Let's not hardcode
-func BuildHandshake() (*http.Request, error) {
-	req, err := http.NewRequest("GET", "http://127.0.0.1:9001/chat", nil)
-	req.Header.Add("Host", "my.websocket.com")
-	req.Header.Add("Upgrade", "websocket")
-	req.Header.Add("Connection", "Upgrade")
+func Handshake(wsURL string) (net.Conn, error) {
+
+	u, err := url.Parse(wsURL)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("path: %v\nhost: %v\n\n", u.Path, u.Host)
+
+	host := u.Host
+	clientKey := "dGhlIHNhbXBsZSBub25jZQ=="
 	// What's up with the key???
 	/**
 	   To prove that the handshake was received, the server has to take two
@@ -31,15 +114,35 @@ func BuildHandshake() (*http.Request, error) {
 	   [RFC4648]), of this concatenation is then returned in the server's
 	   handshake.
 		**/
-	req.Header.Add("Sec-WebSocket-Key", "dGhlIHNhbXBsZSBub25jZQ==")
-	// What are these modes :0
-	req.Header.Add("Sec-WebSocket-Protocol", "chat, superchat")
-	req.Header.Add("Sec-WebSocket-Version", "13")
+	req := fmt.Sprintf(
+		"GET %s HTTP/1.1\r\n"+
+			"Host: %s\r\n"+
+			"Upgrade: websocket\r\n"+
+			"Connection: Upgrade\r\n"+
+			"Sec-WebSocket-Key: %s\r\n"+
+			"Sec-WebSocket-Version: 13\r\n\r\n",
+		u.Path, u.Host, clientKey,
+	)
+	log.Printf("Request: %v", req)
+
+	conn, err := net.Dial("tcp", host)
 	if err != nil {
 		return nil, err
 	}
-	return req, nil
+	_, err = conn.Write([]byte(req))
+	if err != nil {
+		return nil, err
+	}
 
+	resp := make([]byte, 1024)
+	n, err := conn.Read(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	responseStr := string(resp[:n])
+	log.Println("Server Handshake response:", responseStr)
+	return conn, nil
 }
 
 // Initialize an http client for websockets.
@@ -53,14 +156,4 @@ func Initialize(client *http.Client) *http.Client {
 }
 
 func main() {
-	log.Println("Running client...")
-	client := &http.Client{}
-	Initialize(client)
-	handshake_req, _ := BuildHandshake()
-	resp, err := client.Do(handshake_req)
-	if err != nil {
-		log.Fatal("Error fetching url:", err)
-	}
-	log.Println("Response:", resp.Status)
-	log.Println("Response:", resp.Header)
 }

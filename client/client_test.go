@@ -1,8 +1,6 @@
 package client_test
 
 import (
-	"log"
-	"net/http"
 	"testing"
 
 	"github.com/NickR23/gosoc/client"
@@ -10,18 +8,21 @@ import (
 
 // Example test that runs against the server
 func TestClientHandshake(t *testing.T) {
-	http_client := client.Initialize(&http.Client{})
-	handshake_req, _ := client.BuildHandshake()
-	resp, err := http_client.Do(handshake_req)
+	_, err := client.Handshake("ws://127.0.0.1:9001/")
 	if err != nil {
-		log.Fatal("Got error:", err)
-		t.Fatalf("Got error: %v", err)
+		t.Fatalf("Error during handshake: %v", err)
 	}
 
-	if resp.StatusCode != 101 {
-		t.Fatalf("Expected 101, got %v", resp.StatusCode)
-	}
-	log.Println("Response: ", resp.Status)
-	log.Println("Response: ", resp.Header)
+	message := []byte("Hello world!!!!")
 
+	f := client.WSFrame{
+		Fin:        true,
+		Opcode:     0x1,
+		Mask:       true,
+		PayloadLen: uint64(len(message)),
+		Payload:    message,
+	}
+
+	encodedFrame, _ := f.Encode()
+	print("Encoded Frame:", encodedFrame)
 }
