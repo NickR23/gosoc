@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"log"
@@ -7,7 +7,7 @@ import (
 
 // Returns an initial handshake for the websocket session
 // TODO some of these keys are configurable. Let's not hardcode
-func build_handshake() (*http.Request, error) {
+func BuildHandshake() (*http.Request, error) {
 	req, err := http.NewRequest("GET", "http://127.0.0.1:9001/chat", nil)
 	req.Header.Add("Host", "my.websocket.com")
 	req.Header.Add("Upgrade", "websocket")
@@ -44,7 +44,7 @@ func build_handshake() (*http.Request, error) {
 
 // Initialize an http client for websockets.
 // Starts the websocket handshake.
-func initialize(client *http.Client) *http.Client {
+func Initialize(client *http.Client) *http.Client {
 	log.Println("Initializing client...")
 	// Space for client initialization.
 	// Put all of your policy crap here
@@ -55,8 +55,8 @@ func initialize(client *http.Client) *http.Client {
 func main() {
 	log.Println("Running client...")
 	client := &http.Client{}
-	initialize(client)
-	handshake_req, _ := build_handshake()
+	Initialize(client)
+	handshake_req, _ := BuildHandshake()
 	resp, err := client.Do(handshake_req)
 	if err != nil {
 		log.Fatal("Error fetching url:", err)
