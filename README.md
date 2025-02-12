@@ -1,6 +1,7 @@
 # gosoc
 
-<img src="https://github.com/user-attachments/assets/4fdf95c2-53d8-4bf0-af97-0e592c30ab51" width="400">
+
+<img src="https://github.com/user-attachments/assets/e93e817e-7ba9-4c07-ab0a-4ad3544cae22" width="400">
 
 
 ## Websocket library written in Go, but the author only kinda remembers golang
