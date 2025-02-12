@@ -7,6 +7,8 @@
 ## Websocket library written in Go, but the author only kinda remembers golang
 A websocket library written in go. If I were you I wouldn't use this in prod lol. This is mainly to learn go bc i wanna.
 
+## References
+- [RFC 6455](https://www.rfc-editor.org/rfc/rfc6455.html#section-5)
 
 ## Testing
 Goal is to make https://github.com/crossbario/autobahn-testsuite happy (i.e. make this gosoc rfc compliant)
