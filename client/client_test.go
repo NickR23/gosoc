@@ -1,6 +1,8 @@
 package client_test
 
 import (
+	"encoding/base64"
+	"log"
 	"testing"
 
 	"github.com/NickR23/gosoc/client"
@@ -24,5 +26,5 @@ func TestClientHandshake(t *testing.T) {
 	}
 
 	encodedFrame, _ := f.Encode()
-	print("Encoded Frame:", encodedFrame)
+	log.Printf("Encoded Frame: %v", base64.StdEncoding.EncodeToString(encodedFrame))
 }
