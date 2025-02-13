@@ -22,4 +22,7 @@ docker run -it --rm \
     crossbario/autobahn-testsuite
 ```
 
-Some unit tests use the fuzzing server. Once the server has been started, test with `go test -v ./client`
+### For the `go tests`
+1. Start [server](https://github.com/jmalloc/echo-server): `sudo docker run --detach -p 10000:8080 jmalloc/echo-server`
+2. Run tests: `go test -v ./client`
+3. Profit????
