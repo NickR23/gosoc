@@ -5,12 +5,13 @@ import (
 	"net"
 	"testing"
 
-	"github.com/NickR23/gosoc/client"
+	client "github.com/NickR23/gosoc/client"
+	common "github.com/NickR23/gosoc/common"
 )
 
-func sendFrame(conn net.Conn, f client.WSFrame) ([]byte, error) {
+func sendFrame(conn net.Conn, f common.WSFrame) ([]byte, error) {
 	encodedFrame, _ := f.Encode()
-	decodedFrame, _ := client.Decode(encodedFrame)
+	decodedFrame, _ := common.Decode(encodedFrame)
 	log.Printf("Sending frame: %v", decodedFrame)
 	_, err := conn.Write(encodedFrame)
 	if err != nil {
@@ -18,12 +19,10 @@ func sendFrame(conn net.Conn, f client.WSFrame) ([]byte, error) {
 	}
 
 	response := make([]byte, 1024)
-	n, err := conn.Read(response)
+	_, err = conn.Read(response)
 	if err != nil {
 		return nil, err
 	}
-	// TODO Deserialize this response brother
-	log.Printf("Received response: %v", response[:n])
 	return response, nil
 }
 
@@ -35,7 +34,7 @@ func TestClientHandshake(t *testing.T) {
 	}
 
 	message := []byte("ping!")
-	f := client.WSFrame{
+	f := common.WSFrame{
 		Fin:        false,
 		Opcode:     0x1,
 		Mask:       true,
@@ -46,10 +45,10 @@ func TestClientHandshake(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error during handshake: %v", err)
 	}
-	decodedResp, _ := client.Decode(resp)
+	decodedResp, _ := common.Decode(resp)
 	log.Printf("Decoded Response: %v", decodedResp)
 
-	f = client.WSFrame{
+	f = common.WSFrame{
 		Fin:        true,
 		Opcode:     0x8,
 		Mask:       true,
@@ -57,7 +56,7 @@ func TestClientHandshake(t *testing.T) {
 		Payload:    message,
 	}
 	resp, err = sendFrame(conn, f)
-	decodedResp, err = client.Decode(resp)
+	decodedResp, err = common.Decode(resp)
 	log.Printf("Decoded response: %v", decodedResp)
 	if err != nil {
 		t.Fatalf("Error sending frame: %v", err)
