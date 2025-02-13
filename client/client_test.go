@@ -1,7 +1,6 @@
 package client_test
 
 import (
-	"encoding/base64"
 	"log"
 	"net"
 	"testing"
@@ -11,7 +10,8 @@ import (
 
 func sendFrame(conn net.Conn, f client.WSFrame) ([]byte, error) {
 	encodedFrame, _ := f.Encode()
-	log.Printf("Encoded Frame: %v", base64.StdEncoding.EncodeToString(encodedFrame))
+	decodedFrame, _ := client.Decode(encodedFrame)
+	log.Printf("Sending frame: %v", decodedFrame)
 	_, err := conn.Write(encodedFrame)
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func TestClientHandshake(t *testing.T) {
 	message := []byte("ping!")
 	f := client.WSFrame{
 		Fin:        false,
-		Opcode:     0x9,
+		Opcode:     0x1,
 		Mask:       true,
 		PayloadLen: uint64(len(message)),
 		Payload:    message,
@@ -56,7 +56,9 @@ func TestClientHandshake(t *testing.T) {
 		PayloadLen: uint64(len(message)),
 		Payload:    message,
 	}
-	_, err = sendFrame(conn, f)
+	resp, err = sendFrame(conn, f)
+	decodedResp, err = client.Decode(resp)
+	log.Printf("Decoded response: %v", decodedResp)
 	if err != nil {
 		t.Fatalf("Error sending frame: %v", err)
 	}
