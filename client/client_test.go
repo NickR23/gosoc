@@ -15,11 +15,11 @@ func TestClientHandshake(t *testing.T) {
 		t.Fatalf("Error during handshake: %v", err)
 	}
 
-	message := []byte("Hello world!!!!")
+	message := []byte("[close]")
 
 	f := client.WSFrame{
 		Fin:        true,
-		Opcode:     0x1,
+		Opcode:     0x9,
 		Mask:       true,
 		PayloadLen: uint64(len(message)),
 		Payload:    message,
