@@ -8,7 +8,7 @@
 A websocket library written in go. If I were you I wouldn't use this in prod.
 
 ## References
-- [RFC 6455](https://www.rfc-editor.org/rfc/rfc6455.html#section-5)
+- [RFC 6455](https://www.rfc-editor.org/rfc/rfc6455.html)
 
 ## Testing
 Goal is to make https://github.com/crossbario/autobahn-testsuite happy (i.e. make this gosoc rfc compliant)
