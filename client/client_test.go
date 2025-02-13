@@ -22,13 +22,14 @@ func sendFrame(conn net.Conn, f client.WSFrame) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	// TODO Deserialize this response brother
 	log.Printf("Received response: %v", response[:n])
 	return response, nil
 }
 
 // Example test that runs against the server
 func TestClientHandshake(t *testing.T) {
-	conn, err := client.Handshake("ws://127.0.0.1:9001/")
+	conn, err := client.Handshake("ws://127.0.0.1:10000/")
 	if err != nil {
 		t.Fatalf("Error during handshake: %v", err)
 	}
@@ -41,10 +42,12 @@ func TestClientHandshake(t *testing.T) {
 		PayloadLen: uint64(len(message)),
 		Payload:    message,
 	}
-	_, err = sendFrame(conn, f)
+	resp, err := sendFrame(conn, f)
 	if err != nil {
 		t.Fatalf("Error during handshake: %v", err)
 	}
+	decodedResp, _ := client.Decode(resp)
+	log.Printf("Decoded Response: %v", decodedResp)
 
 	f = client.WSFrame{
 		Fin:        true,

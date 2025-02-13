@@ -2,6 +2,8 @@ package client
 
 import (
 	"encoding/binary"
+	"encoding/hex"
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
@@ -62,7 +64,53 @@ func (f *WSFrame) Encode() ([]byte, error) {
 	}
 	frame = append(frame, payload...)
 	return frame, nil
+}
 
+func Decode(frameData []byte) (*WSFrame, error) {
+	if len(frameData) < 2 {
+		return nil, errors.New("frame too short")
+	}
+	frame := &WSFrame{}
+	frame.Fin = (frameData[0] & 0x80) != 0
+	frame.Opcode = frameData[0] & 0x0f
+	payloadLen := uint64(frameData[1] & 0x7F) // opcodes are 7 bits wide
+	offset := 2                               //Start reading from the 2nd byte
+
+	if payloadLen == 126 { // Extended payload
+		if len(frameData) < 4 {
+			return nil, errors.New("invalid frame: missing extended payload lentgth")
+		}
+		payloadLen = uint64(binary.BigEndian.Uint16(frameData[2:4]))
+	} else if payloadLen == 127 { // Huge payload length (8 bytes wide)
+		if len(frameData) < 10 {
+			return nil, errors.New("invalid frame: missing extended payload length")
+		}
+		payloadLen = binary.BigEndian.Uint64(frameData[2:10])
+	}
+	if len(frameData) < int(offset+int(payloadLen)) {
+		return nil, errors.New("invalid frame: incomplete payload data")
+	}
+	frame.Payload = frameData[offset : offset+int(payloadLen)]
+	return frame, nil
+}
+
+func (f *WSFrame) String() string {
+	payloadStr := string(f.Payload)
+	if !isPrintable(f.Payload) {
+		payloadStr = hex.EncodeToString(f.Payload)
+	}
+	return fmt.Sprintf(
+		"WSFrame(FIN=%t, Opcode=0x%X, PayloadLen=%d, Payload=%s)",
+		f.Fin, f.Opcode, f.PayloadLen, payloadStr)
+}
+
+func isPrintable(data []byte) bool {
+	for _, b := range data {
+		if b < 32 || b > 126 {
+			return false
+		}
+	}
+	return true
 }
 
 func encodePayloadLength(payloadLen uint64) ([]byte, byte) {
