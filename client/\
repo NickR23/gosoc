@@ -3,27 +3,13 @@ package client_test
 import (
 	"encoding/base64"
 	"log"
-	"net"
 	"testing"
 
 	"github.com/NickR23/gosoc/client"
 )
 
-func sendFrame(conn net.Conn, f client.WSFrame) ([]byte, error) {
-	encodedFrame, _ := f.Encode()
-	log.Printf("Encoded Frame: %v", base64.StdEncoding.EncodeToString(encodedFrame))
-	_, err := conn.Write(encodedFrame)
-	if err != nil {
-		return nil, err
-	}
+func sendFrame(conn *net.Conn, f *client.WSFrame) (byte[], error) {
 
-	response := make([]byte, 1024)
-	n, err := conn.Read(response)
-	if err != nil {
-		return nil, err
-	}
-	log.Printf("Received response: %v", response[:n])
-	return response, nil
 }
 
 // Example test that runs against the server
@@ -33,7 +19,8 @@ func TestClientHandshake(t *testing.T) {
 		t.Fatalf("Error during handshake: %v", err)
 	}
 
-	message := []byte("ping!")
+	message := []byte("[close]")
+
 	f := client.WSFrame{
 		Fin:        false,
 		Opcode:     0x9,
@@ -41,10 +28,20 @@ func TestClientHandshake(t *testing.T) {
 		PayloadLen: uint64(len(message)),
 		Payload:    message,
 	}
-	_, err = sendFrame(conn, f)
+
+	encodedFrame, _ := f.Encode()
+	log.Printf("Encoded Frame: %v", base64.StdEncoding.EncodeToString(encodedFrame))
+	_, err = conn.Write(encodedFrame)
 	if err != nil {
-		t.Fatalf("Error during handshake: %v", err)
+		t.Fatalf("Error sending frame: %v", err)
 	}
+
+	response := make([]byte, 1024)
+	n, err := conn.Read(response)
+	if err != nil {
+		t.Fatalf("Error during response read: %v", err)
+	}
+	log.Printf("Received response: %v", response[:n])
 
 	f = client.WSFrame{
 		Fin:        true,
@@ -53,7 +50,9 @@ func TestClientHandshake(t *testing.T) {
 		PayloadLen: uint64(len(message)),
 		Payload:    message,
 	}
-	_, err = sendFrame(conn, f)
+	encodedFrame, _ = f.Encode()
+	sendFrame(
+	_, err = conn.Write(encodedFrame)
 	if err != nil {
 		t.Fatalf("Error sending frame: %v", err)
 	}

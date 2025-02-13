@@ -91,7 +91,7 @@ func Handshake(wsURL string) (net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("path: %v\nhost: %v\n\n", u.Path, u.Host)
+	//log.Printf("path: %v\nhost: %v\n\n", u.Path, u.Host)
 
 	host := u.Host
 	clientKey := "dGhlIHNhbXBsZSBub25jZQ=="
@@ -123,7 +123,7 @@ func Handshake(wsURL string) (net.Conn, error) {
 			"Sec-WebSocket-Version: 13\r\n\r\n",
 		u.Path, u.Host, clientKey,
 	)
-	log.Printf("Request: %v", req)
+	//log.Printf("Request: %v", req)
 
 	conn, err := net.Dial("tcp", host)
 	if err != nil {
@@ -135,13 +135,13 @@ func Handshake(wsURL string) (net.Conn, error) {
 	}
 
 	resp := make([]byte, 1024)
-	n, err := conn.Read(resp)
+	_, err = conn.Read(resp)
 	if err != nil {
 		return nil, err
 	}
 
-	responseStr := string(resp[:n])
-	log.Println("Server Handshake response:", responseStr)
+	//responseStr := string(resp[:n])
+	// log.Println("Server Handshake response:", responseStr)
 	return conn, nil
 }
 
