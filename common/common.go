@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log"
 	"math/rand"
 )
 
@@ -40,6 +41,14 @@ func (f *WSFrame) Encode() ([]byte, error) {
 	}
 	firstByte |= f.Opcode // Lower bits are the opcode i think...
 
+	/**
+			The RSV{1,2,3} bits should all be set to zero in this first byte
+			"unless an extension is negotiated that defines meanings
+	      for non-zero values"
+		**/
+
+	log.Println(f.PayloadLen)
+	log.Printf("payload: %v", f.Payload)
 	payloadLenBytes, secondByte := encodePayloadLength(f.PayloadLen)
 	if f.Mask {
 		secondByte |= 0x80 // Mask bit is the higher bit here
